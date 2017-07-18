@@ -1404,6 +1404,18 @@ if WolfHUD then
 								step_size = 0.1,
 							},
 							{
+								type = "slider",
+								name_id = "wolfhud_dmg_popup_height_title",
+								desc_id = "wolfhud_dmg_popup_height_desc",
+								visible_reqs = {
+									{ setting = { "DamagePopup", "HEIGHT" }, min = 0 },
+								},
+								value = {"DamagePopup", "HEIGHT"},
+								min_value = 0,
+								max_value = 100,
+								step_size = 1,
+							},
+							{
 								type = "multi_choice",
 								name_id = "wolfhud_dmg_popup_color_title",
 								desc_id = "wolfhud_dmg_popup_color_desc",

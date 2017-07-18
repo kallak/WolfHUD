@@ -224,6 +224,7 @@ if not _G.WolfHUD then
 			DamagePopup = {
 				DISPLAY_MODE							= 2,
 				DURATION	 							= 3,
+				HEIGHT	 								= 20,
 				SCALE									= 1,
 				SKULL_SCALE								= 1.2,
 				SKULL_ALIGN								= 1,			-- left (1) or right (2)
