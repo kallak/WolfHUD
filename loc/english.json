@@ -756,6 +756,8 @@
 	"wolfhud_dmg_popup_skull_align_desc" : "Changes the alignment of the skull icon when it was a kill.",
 	"wolfhud_dmg_popup_time_title" : "Popup Time",
 	"wolfhud_dmg_popup_time_desc" : "Determines how long the popup will stay.",
+	"wolfhud_dmg_popup_height_title" : "Popup Height",
+	"wolfhud_dmg_popup_height_desc" : "Determines how heigh above the enemy the popup will render.",
 	"wolfhud_dmg_popup_color_title" : "Bodyshot Popup Color",
 	"wolfhud_dmg_popup_color_desc" : "Set the color of the popup for bodyshots",
 	"wolfhud_dmg_popup_headshot_color_title" : "Headshot Popup Color",
