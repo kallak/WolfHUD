@@ -1412,8 +1412,8 @@ if WolfHUD then
 								},
 								value = {"DamagePopup", "HEIGHT"},
 								min_value = 0,
-								max_value = 100,
-								step_size = 1,
+								max_value = 500,
+								step_size = 10,
 							},
 							{
 								type = "multi_choice",
@@ -1438,6 +1438,18 @@ if WolfHUD then
 								options = {},
 								add_color_options = true,
 								add_rainbow = false,
+							},
+							{
+								type = "slider",
+								name_id = "wolfhud_dmg_popup_alpha_title",
+								desc_id = "wolfhud_dmg_popup_alpha_desc",
+								visible_reqs = {
+									{ setting = { "DamagePopup", "ALPHA" }, min = 0 },
+								},
+								value = {"DamagePopup", "ALPHA"},
+								min_value = 0,
+								max_value = 1,
+								step_size = 0.05,
 							},
 						},
 					},
@@ -3556,6 +3568,21 @@ if WolfHUD then
 						desc_id = "wolfhud_loot_screen_pick_card_desc",
 						value = {"SkipIt", "AUTOPICK_CARD"},
 						visible_reqs = {},
+					},
+					{
+						type = "multi_choice",
+						name_id = "wolfhud_loot_screen_pick_specific_card_title",
+						desc_id = "wolfhud_loot_screen_pick_specific_card_desc",
+						options = {
+							"wolfhud_loot_screen_pick_card_random",
+							"wolfhud_multiselect_left",
+							"wolfhud_multiselect_center",
+							"wolfhud_multiselect_right",
+						},
+						visible_reqs = {
+							{ setting = {"SkipIt", "AUTOPICK_CARD"}, invert = false },
+						},
+						value = {"SkipIt", "AUTOPICK_CARD_SPECIFIC"},
 					},
 					{
 						type = "slider",

@@ -230,6 +230,7 @@ if not _G.WolfHUD then
 				SKULL_ALIGN								= 1,			-- left (1) or right (2)
 				COLOR									= "yellow",
 				HEADSHOT_COLOR							= "red",
+				ALPHA	 								= 1,
 			},
 			AssaultBanner = {
 				POSITION								= 2,			-- left (1), center (2) or right (3)
@@ -547,6 +548,7 @@ if not _G.WolfHUD then
 				STAT_SCREEN_SPEEDUP						= false,
 				STAT_SCREEN_DELAY 						= 5,		--Skip the experience screen after X seconds
 				AUTOPICK_CARD 							= true,		--Automatically pick a card on lootscreen
+				AUTOPICK_CARD_SPECIFIC 					= 0,
 				LOOT_SCREEN_DELAY 						= 3,		--Skip the loot screen after X seconds
 				NO_SLOWMOTION 							= true,		--Disable mask-up and downed slow motion
 			},
