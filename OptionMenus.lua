@@ -342,7 +342,7 @@ if WolfHUD then
 	WolfHUD.options_menu_data = {
 		type = "menu",
 		menu_id = "wolfhud_main_options_menu",
-		parent_id = "lua_mod_options_menu",
+		parent_id = "blt_options",
 		name_id = "wolfhud_options_name",
 		desc_id = "wolfhud_options_help",
 		position = 3,
@@ -865,8 +865,7 @@ if WolfHUD then
 								name_id = "wolfhud_panels_show_interaction_number_title",
 								desc_id = "wolfhud_panels_show_interaction_number_desc",
 								visible_reqs = {
-									{ setting = {"CustomHUD", "ENABLED"}, invert = true },
-									{ setting = {"CustomHUD", "TEAMMATE", "INTERACTION", "HIDE"}, invert = true },
+									{ setting = {"CustomHUD", "TEAMMATE", "INTERACTION", "HIDE"}, invert = true }
 								},
 								value = {"CustomHUD", "TEAMMATE", "INTERACTION", "NUMBER"},
 							},
@@ -875,8 +874,7 @@ if WolfHUD then
 								name_id = "wolfhud_panels_show_interaction_text_title",
 								desc_id = "wolfhud_panels_show_interaction_text_desc",
 								visible_reqs = {
-									{ setting = {"CustomHUD", "ENABLED"}, invert = true },
-									{ setting = {"CustomHUD", "TEAMMATE", "INTERACTION", "HIDE"}, invert = true },
+									{ setting = {"CustomHUD", "TEAMMATE", "INTERACTION", "HIDE"}, invert = true }
 								},
 								value = {"CustomHUD", "TEAMMATE", "INTERACTION", "TEXT"},
 							},
@@ -885,7 +883,7 @@ if WolfHUD then
 								name_id = "wolfhud_panels_interaction_time_title",
 								desc_id = "wolfhud_panels_interaction_time_desc",
 								visible_reqs = {
-									{ setting = {"CustomHUD", "TEAMMATE", "INTERACTION", "HIDE"}, invert = true },
+									{ setting = {"CustomHUD", "TEAMMATE", "INTERACTION", "HIDE"}, invert = true }
 								},
 								value = {"CustomHUD", "TEAMMATE", "INTERACTION", "MIN_DURATION"},
 								min_value = 0,
@@ -1058,10 +1056,30 @@ if WolfHUD then
 							},
 							{
 								type = "slider",
+								name_id = "wolfhud_chat_width_title",
+								desc_id = "wolfhud_chat_width_desc",
+								visible_reqs = {},
+								value = {"HUDChat", "WIDTH"},
+								min_value = 200,
+								max_value = 500,
+								step_size = 1,
+							},
+							{
+								type = "slider",
 								name_id = "wolfhud_chat_outputlines_title",
 								desc_id = "wolfhud_chat_outputlines_desc",
 								visible_reqs = {},
 								value = {"HUDChat", "MAX_OUTPUT_LINES"},
+								min_value = 2,
+								max_value = 15,
+								step_size = 1,
+							},
+							{
+								type = "slider",
+								name_id = "wolfhud_chat_inputlines_title",
+								desc_id = "wolfhud_chat_inputlines_desc",
+								visible_reqs = {},
+								value = {"HUDChat", "MAX_INPUT_LINES"},
 								min_value = 2,
 								max_value = 15,
 								step_size = 1,
@@ -1075,6 +1093,24 @@ if WolfHUD then
 								min_value = 0,
 								max_value = 90,
 								step_size = 1,
+							},
+							{
+								type = "toggle",
+								name_id = "wolfhud_chat_colored_bg_title",
+								desc_id = "wolfhud_chat_colored_bg_desc",
+								visible_reqs = {},
+								value = {"HUDChat", "COLORED_BG"},
+							},
+							{
+								type = "multi_choice",
+								name_id = "wolfhud_chat_scrollbar_align_title",
+								desc_id = "wolfhud_chat_scrollbar_align_desc",
+								value = {"HUDChat", "SCROLLBAR_ALIGN"},
+								visible_reqs = {},
+								options = {
+									"wolfhud_multiselect_left",
+									"wolfhud_multiselect_right",
+								},
 							},
 							{
 								type = "divider",
@@ -1408,12 +1444,24 @@ if WolfHUD then
 								name_id = "wolfhud_dmg_popup_height_title",
 								desc_id = "wolfhud_dmg_popup_height_desc",
 								visible_reqs = {
-									{ setting = { "DamagePopup", "HEIGHT" }, min = 0 },
+									{ setting = { "DamagePopup", "DISPLAY_MODE" }, min = 2 },
 								},
 								value = {"DamagePopup", "HEIGHT"},
 								min_value = 0,
 								max_value = 500,
 								step_size = 10,
+							},
+							{
+								type = "slider",
+								name_id = "wolfhud_dmg_popup_alpha_title",
+								desc_id = "wolfhud_dmg_popup_alpha_desc",
+								visible_reqs = {
+									{ setting = { "DamagePopup", "DISPLAY_MODE" }, min = 2 },
+								},
+								value = {"DamagePopup", "ALPHA"},
+								min_value = 0,
+								max_value = 1,
+								step_size = 0.05,
 							},
 							{
 								type = "multi_choice",
@@ -1438,18 +1486,6 @@ if WolfHUD then
 								options = {},
 								add_color_options = true,
 								add_rainbow = false,
-							},
-							{
-								type = "slider",
-								name_id = "wolfhud_dmg_popup_alpha_title",
-								desc_id = "wolfhud_dmg_popup_alpha_desc",
-								visible_reqs = {
-									{ setting = { "DamagePopup", "ALPHA" }, min = 0 },
-								},
-								value = {"DamagePopup", "ALPHA"},
-								min_value = 0,
-								max_value = 1,
-								step_size = 0.05,
 							},
 						},
 					},
@@ -3574,10 +3610,10 @@ if WolfHUD then
 						name_id = "wolfhud_loot_screen_pick_specific_card_title",
 						desc_id = "wolfhud_loot_screen_pick_specific_card_desc",
 						options = {
-							"wolfhud_loot_screen_pick_card_random",
 							"wolfhud_multiselect_left",
 							"wolfhud_multiselect_center",
 							"wolfhud_multiselect_right",
+							"wolfhud_multiselect_random",
 						},
 						visible_reqs = {
 							{ setting = {"SkipIt", "AUTOPICK_CARD"}, invert = false },

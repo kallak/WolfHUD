@@ -353,6 +353,9 @@ if string.lower(RequiredScript) == "lib/managers/hudmanagerpd2" then
 		ring_band = 						"rings",
 		glc_hold_take_handcuffs = 			"handcuffs",
 		hold_take_missing_animal_poster = 	"poster",
+		press_take_folder = 				"poster",
+		--take_confidential_folder_icc = 		"poster",
+		take_jfr_briefcase = 				"briefcase",
 	}
 
 	HUDListManager.LOOT_TYPES = {
@@ -391,6 +394,7 @@ if string.lower(RequiredScript) == "lib/managers/hudmanagerpd2" then
 		money =						"money",
 		mus_artifact =				"artifact",
 		mus_artifact_paint =		"painting",
+		old_wine = 					"wine",
 		ordinary_wine = 			"wine",
 		painting =					"painting",
 		person =					"body",
@@ -3009,6 +3013,7 @@ if string.lower(RequiredScript) == "lib/managers/hudmanagerpd2" then
 		thermite = 					{ hudpickups = { 64, 64, 32, 32 }, 												priority = 1, category = "mission_pickups", ignore = not WolfHUD:getSetting({"HUDList", "RIGHT_LIST", "SHOW_PICKUP_CATEGORIES", "mission_pickups"}, true) 	},
 		c4 = 						{ hudicons	 = { 36, 242, 32, 32 }, 											priority = 1, category = "mission_pickups", ignore = not WolfHUD:getSetting({"HUDList", "RIGHT_LIST", "SHOW_PICKUP_CATEGORIES", "mission_pickups"}, true) 	},
 		small_loot = 				{ hudpickups = { 32, 224, 32, 32}, 												priority = 3, category = "valuables", 		ignore = not WolfHUD:getSetting({"HUDList", "RIGHT_LIST", "SHOW_PICKUP_CATEGORIES", "valuables"}, true) 		},
+		briefcase = 				{ hudpickups = { 96, 224, 32, 32}, 												priority = 4, category = "collectables", 	ignore = not WolfHUD:getSetting({"HUDList", "RIGHT_LIST", "SHOW_PICKUP_CATEGORIES", "collectables"}, true) 		},
 		courier = 					{ texture = "guis/dlcs/gage_pack_jobs/textures/pd2/endscreen/gage_assignment", 	priority = 3, category = "collectables", 	ignore = not WolfHUD:getSetting({"HUDList", "RIGHT_LIST", "SHOW_PICKUP_CATEGORIES", "collectables"}, true) 		},			--{ texture = "guis/textures/contact_vlad", texture_rect = {1920, 0, 64, 64}, priority = 3 }, --[[skills 	 = { 6, 0 }]]
 		gage_case = 				{ skills 	 = { 1, 0 }, 														priority = 3, category = "collectables", 	ignore = not WolfHUD:getSetting({"HUDList", "RIGHT_LIST", "SHOW_PICKUP_CATEGORIES", "collectables"}, true) 		},
 		gage_key = 					{ hudpickups = { 32, 64, 32, 32 }, 												priority = 3, category = "collectables", 	ignore = not WolfHUD:getSetting({"HUDList", "RIGHT_LIST", "SHOW_PICKUP_CATEGORIES", "collectables"}, true) 		},
@@ -4023,7 +4028,6 @@ if string.lower(RequiredScript) == "lib/managers/hudmanagerpd2" then
 		self._health_bar = self._panel:bitmap({
 			name = "radial_health",
 			texture = "guis/textures/pd2/hud_health",
-			texture_rect = { 64, 0, -64, 64 },
 			render_template = "VertexColorTexturedRadial",
 			blend_mode = "add",
 			layer = 2,
@@ -4031,6 +4035,7 @@ if string.lower(RequiredScript) == "lib/managers/hudmanagerpd2" then
 			w = self._panel:w(),
 			h = self._panel:w(),
 		})
+		self._health_bar:set_texture_rect(self._health_bar:texture_width(), 0, -self._health_bar:texture_width(), self._health_bar:texture_height())
 		self._health_bar:set_bottom(self._panel:bottom())
 
 		self._hit_indicator = self._panel:bitmap({
@@ -4048,7 +4053,6 @@ if string.lower(RequiredScript) == "lib/managers/hudmanagerpd2" then
 		self._outline = self._panel:bitmap({
 			name = "outline",
 			texture = "guis/textures/pd2/hud_shield",
-			texture_rect = { 64, 0, -64, 64 },
 			blend_mode = "add",
 			w = self._panel:w() * 0.95,
 			h = self._panel:w() * 0.95,
@@ -4056,6 +4060,7 @@ if string.lower(RequiredScript) == "lib/managers/hudmanagerpd2" then
 			alpha = 0.3,
 			color = Color(0.8, 0.8, 1.0),
 		})
+		self._outline:set_texture_rect(self._outline:texture_width(), 0, -self._outline:texture_width(), self._outline:texture_height())
 		self._outline:set_center(self._health_bar:center())
 
 		self._damage_upgrade_text = self._panel:text({
@@ -5297,7 +5302,7 @@ if string.lower(RequiredScript) == "lib/managers/hudmanagerpd2" then
 		},
 
 		--Henchman boosts
-		crew_inspire_debuff = {
+		team_crew_inspire_debuff = {
 			hud_tweak = "ability_1",
 			class = "TimedBuffItem",
 			priority = 10,
@@ -5920,7 +5925,7 @@ if string.lower(RequiredScript) == "lib/managers/hudmanagerpd2" then
 			self:deactivate_debuff()
 		end
 
-		HUDList.BikerBuffItem.super._set_stack_count(self, charges)
+		HUDList.BikerBuffItem.super._set_stack_count(self, math.max(charges, 0))
 	end
 
 	HUDList.TeamBuffItem = HUDList.TeamBuffItem or class(HUDList.BuffItemBase)

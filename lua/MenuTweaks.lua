@@ -1,5 +1,5 @@
 if string.lower(RequiredScript) == "lib/managers/menumanager" then
-	function MenuCallbackHandler:is_dlc_latest_locked(...) return false end
+	function MenuCallbackHandler:is_dlc_latest_locked(...) return false end		--Hide DLC ad in the main menu
 
 	local modify_controls_original = MenuOptionInitiator.modify_controls
 	function MenuOptionInitiator:modify_controls(...)
@@ -7,7 +7,7 @@ if string.lower(RequiredScript) == "lib/managers/menumanager" then
 
 		-- Give sensitivity sliders a step size of 1%.
 		local item
-		for i, name in ipairs({"camera_sensitivity", "camera_sensitivity_horizontal", "camera_sensitivity_vertical", "camera_zoom_sensitivity"}) do
+		for i, name in ipairs({"camera_sensitivity", "camera_sensitivity_horizontal", "camera_sensitivity_vertical", "camera_zoom_sensitivity", "camera_zoom_sensitivity_horizontal", "camera_zoom_sensitivity_vertical"}) do
 			item = new_node:item(name)
 			if item then
 				item:set_step((tweak_data.player.camera.MAX_SENSITIVITY - tweak_data.player.camera.MIN_SENSITIVITY) * 0.01)
@@ -631,15 +631,15 @@ elseif string.lower(RequiredScript) == "lib/managers/menu/stageendscreengui" the
 elseif string.lower(RequiredScript) == "lib/managers/menu/lootdropscreengui" then
 	local SKIP_LOOT_SCREEN_DELAY = WolfHUD:getSetting({"SkipIt", "LOOT_SCREEN_DELAY"}, 3)
 	local AUTO_PICK_CARD = WolfHUD:getSetting({"SkipIt", "AUTOPICK_CARD"}, true)
-	local AUTO_PICK_SPECIFIC_CARD = WolfHUD:getSetting({"SkipIt", "AUTOPICK_CARD_SPECIFIC"}, 0)
+	local AUTO_PICK_SPECIFIC_CARD = WolfHUD:getSetting({"SkipIt", "AUTOPICK_CARD_SPECIFIC"}, 1)
 	local update_original = LootDropScreenGui.update
 	function LootDropScreenGui:update(t, ...)
 		update_original(self, t, ...)
 
 		if not self._card_chosen and AUTO_PICK_CARD then
-			local autopicked_card = math.random(3)
-			if AUTO_PICK_SPECIFIC_CARD > 0 and AUTO_PICK_SPECIFIC_CARD < 4 then
-				autopicked_card = AUTO_PICK_SPECIFIC_CARD
+			local autopicked_card = AUTO_PICK_SPECIFIC_CARD
+			if autopicked_card == 4 then
+				autopicked_card = math.random(3)
 			end
 			self:_set_selected_and_sync(autopicked_card)
 			self:confirm_pressed()

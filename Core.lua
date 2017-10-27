@@ -5,7 +5,7 @@ if not _G.WolfHUD then
 	WolfHUD.settings_path = WolfHUD.save_path .. "WolfHUD_v2.json"
 	WolfHUD.tweak_file = "WolfHUDTweakData.lua"
 	WolfHUD.LOG_MODE = { error = true, warning = true, info = false }		-- error, info, warning or all
-	WolfHUD.version = nil
+	WolfHUD.identifier = string.match(WolfHUD.mod_path, "(%w+)[\\/]$") or "WolfHUD"
 
 	WolfHUD.settings = {}
 	WolfHUD.tweak_data = {}
@@ -33,7 +33,7 @@ if not _G.WolfHUD then
 		["lib/managers/hud/hudobjectives"] 							= { "EnhancedObjective.lua" },
 		["lib/managers/hud/hudheisttimer"] 							= { "EnhancedObjective.lua" },
 		["lib/managers/hud/hudchat"] 								= { "HUDChat.lua" },
-		["lib/managers/hud/hudstatsscreen"] 						= { "TabStats.lua", "EnhancedCrewLoadout.lua" },
+		["lib/managers/hud/newhudstatsscreen"] 						= { "TabStats.lua", "EnhancedCrewLoadout.lua" },
 		["lib/managers/hud/hudinteraction"] 						= { "Interaction.lua" },
 		["lib/managers/hud/hudsuspicion"] 							= { "NumbericSuspicion.lua" },
 		["lib/managers/hud/hudhitdirection"] 						= { "DamageIndicator.lua" },
@@ -201,7 +201,11 @@ if not _G.WolfHUD then
 			HUDChat = {
 				CHAT_WAIT_TIME							= 10,		--Time before chat fades out, 0 = never
 				LINE_HEIGHT								= 15,		--Chat font Size
+				WIDTH									= 380,		--Width of the chat window
 				MAX_OUTPUT_LINES						= 8,		--Chat Output lines
+				MAX_INPUT_LINES							= 5,		--Number of lines of text you can type
+				COLORED_BG								= true,		--Colorize the line bg based on the message source
+				SCROLLBAR_ALIGN							= 2,		--Alignment of the scroll bar (1 = left, 2 = right)
 				SPAM_FILTER								= true,		--Filter PocoHud and NGBTO Chat Spam messages.
 			},
 			EnemyHealthbar = {
@@ -224,13 +228,13 @@ if not _G.WolfHUD then
 			DamagePopup = {
 				DISPLAY_MODE							= 2,
 				DURATION	 							= 3,
-				HEIGHT	 								= 20,
 				SCALE									= 1,
 				SKULL_SCALE								= 1.2,
 				SKULL_ALIGN								= 1,			-- left (1) or right (2)
+				HEIGHT	 								= 20,
+				ALPHA	 								= 1,
 				COLOR									= "yellow",
 				HEADSHOT_COLOR							= "red",
-				ALPHA	 								= 1,
 			},
 			AssaultBanner = {
 				POSITION								= 2,			-- left (1), center (2) or right (3)
@@ -548,7 +552,7 @@ if not _G.WolfHUD then
 				STAT_SCREEN_SPEEDUP						= false,
 				STAT_SCREEN_DELAY 						= 5,		--Skip the experience screen after X seconds
 				AUTOPICK_CARD 							= true,		--Automatically pick a card on lootscreen
-				AUTOPICK_CARD_SPECIFIC 					= 0,
+				AUTOPICK_CARD_SPECIFIC 					= 4,		--left, center, right, random
 				LOOT_SCREEN_DELAY 						= 3,		--Skip the loot screen after X seconds
 				NO_SLOWMOTION 							= true,		--Disable mask-up and downed slow motion
 			},
@@ -588,9 +592,13 @@ if not _G.WolfHUD then
 						end
 					end
 				end
-				log(string.format("[WolfHUD] %s:", string.upper(type(text))))
-				log_table(text)
-				return
+				if not text[1] or type(text[1]) ~= "string" then
+					log(string.format("[WolfHUD] %s:", string.upper(type(msg_type))))
+					log_table(text)
+					return
+				else
+					text = string.format(unpack(text))
+				end
 			elseif type(text) == "function" then
 				msg_type = "error"
 				text = "Cannot log function... "
@@ -616,7 +624,7 @@ if not _G.WolfHUD then
 							table_dst[k] = v
 						end
 					else
-						self:print_log("Error while loading, Setting types don't match (%s->%s)", table.concat(setting_path, "->") or "", k or "N/A", "error")
+						self:print_log("Error while loading, Setting types don't match (%s->%s)", self:SafeTableConcat(setting_path, "->") or "", k or "N/A", "error")
 						corrupted = corrupted or true
 					end
 				end
@@ -648,118 +656,33 @@ if not _G.WolfHUD then
 		end
 	end
 
-	function WolfHUD:AskOverride(data, setting, notif_id)
-		local menu_options = {
-			[1] = {
-				text = managers.localization:text("dialog_yes"),
-				callback = function(self, item)
-					WolfHUD.settings["MOD_OVERRIDES"][setting] = true
-					WolfHUD:Save()
-					WolfHUD:createOverrides(data)
-					if notif_id and NotificationsManager:NotificationExists( notif_id ) then
-						NotificationsManager:UpdateNotification( notif_id,
-							managers.localization:text("woldhud_notification_restart_override_title", { NAME = data.display_name }),
-							managers.localization:text("woldhud_notification_restart_override_desc"), 20, function() end
-						)
-					end
-				end,
-			},
-			[2] = {
-				text = managers.localization:text("dialog_no"),
-				callback = function(self, item)
-					WolfHUD.settings["MOD_OVERRIDES"][setting] = false
-					WolfHUD:Save()
-					WolfHUD:createOverrideNotification(data, setting)
-				end,
-			},
-			[3] = {
-				text = managers.localization:text("wolfhud_dialog_remind_later"),
-				is_cancel_button = true,
-			},
-		}
-		return QuickMenu:new( managers.localization:text("wolfhud_dialog_install_title", { NAME = data["display_name"] }),
-				string.format("%s\n\n%s", managers.localization:text(string.format("wolfhud_dialog_install_%s_desc", data["identifier"])), managers.localization:text("wolfhud_dialog_install_desc", { NAME = data["display_name"]})) ,
-				menu_options, true )
+	function WolfHUD:createDirectory(path)
+		local current = ""
+		path = Application:nice_path(path, true):gsub("\\", "/")
+		for folder in string.gmatch(path, "([^/]*)/") do
+			current = Application:nice_path(current .. folder, true)
+			if not file.DirectoryExists(current) then
+				if SystemFS and SystemFS.make_dir then
+					SystemFS:make_dir(current)
+				elseif file and file.CreateDirectory then
+					file.CreateDirectory(current)
+				end
+			end
+		end
 	end
 
 	function WolfHUD:getVersion()
-		if not self.version then
-			for k, v in pairs(LuaModManager.Mods) do
-				local info = v.definition
-				if info["name"] == "WolfHUD" then
-					self.version = info["version"] or self.version
-					break
-				end
-			end
-		end
-
-		return self.version
+        local mod = BLT.Mods:GetMod(WolfHUD.identifier or "")
+		return tostring(mod and mod:GetVersion() or "(n/a)")
 	end
 
-	function WolfHUD:checkOverrides()
-		local updates = {}
-		for k, v in pairs(LuaModManager.Mods) do
-			local info = v.definition
-			if info["name"] == "WolfHUD" then
-				updates = info["updates"] or {}
-				break
-			end
+	function WolfHUD:SafeTableConcat(tbl, str)
+		local res
+		for i = 1, #tbl do
+			local val = tbl[i] and tostring(tbl[i]) or "[nil]"
+			res = res and res .. str .. val or val
 		end
-
-		if SystemInfo:platform() ~= Idstring("WIN32") then -- Abort here while Linux doesn't support 'mod_overrides', TODO: Linux seems to return WIN32 as well...
-			return
-		end
-
-		for k, v in pairs(updates) do
-			if type(v["revision"]) == "string" and not io.file_is_readable( v["revision"] ) then
-				local setting = v["identifier"]
-				if WolfHUD.settings["MOD_OVERRIDES"][setting] then
-					WolfHUD:AskOverride(v, setting)
-				elseif WolfHUD.settings["MOD_OVERRIDES"][setting] == nil then
-					WolfHUD:createOverrides(v)
-				else
-					WolfHUD:createOverrideNotification(v, setting)
-				end
-			end
-		end
-	end
-
-	function WolfHUD:createOverrides(data)
-		self:print_log("Creating Dummy for: " .. data["display_name"], "info")
-		if not file.DirectoryExists("./" .. data["install_dir"]) then
-			WolfHUD:print_log("[WolfHUD] 'mod_overrides' folder is missing!", "warning")
-			WolfHUD:createDirectory("./" .. data["install_dir"])
-		end
-		if not file.DirectoryExists("./" .. data["install_dir"] .. data["install_folder"]) then
-			WolfHUD:print_log("[WolfHUD] mod_override folder '" .. data["install_folder"] .. "' is missing!", "warning")
-			WolfHUD:createDirectory("./" .. data["install_dir"] .. data["install_folder"])
-		end
-		local file = io.open(data["revision"], "w+")
-		if file then
-			file:write("0")
-			file:close()
-		end
-	end
-
-	function WolfHUD:createDirectory(path)
-		if SystemFS and SystemFS.make_dir then
-			SystemFS:make_dir(path)
-		elseif file and file.CreateDirectory then
-			file.CreateDirectory(path)
-		end
-	end
-
-	function WolfHUD:createOverrideNotification(data, setting)
-		local id = string.format("wolfhud_disabled_override_%s", data.identifier)
-		if not NotificationsManager:NotificationExists( id ) then
-			NotificationsManager:AddNotification( id,
-				managers.localization:text("woldhud_notification_disabled_override_title", { NAME = data.display_name }),
-				managers.localization:text("woldhud_notification_disabled_override_desc"),
-				20, function()
-					WolfHUD:AskOverride(data, setting, id)
-				end
-			)
-		end
+		return res
 	end
 
 	function WolfHUD:getSetting(id_table, default)
@@ -768,7 +691,7 @@ if not _G.WolfHUD then
 			for i = 1, #id_table do
 				entry = entry[id_table[i]]
 				if entry == nil then
-					self:print_log("Requested setting doesn't exists!  (id='" .. table.concat(id_table, "->") .. "', type='" .. tostring(default) .. "') ", "error")
+					self:print_log("Requested setting doesn't exists!  (id='" .. self:SafeTableConcat(id_table, "->") .. "', type='" .. (default and type(default) or "n/a") .. "') ", "error")
 					return default
 				end
 			end
@@ -956,7 +879,7 @@ if not _G.WolfHUD then
 			end
 		end
 
-		create_menu({menu_options}, "lua_mod_options_menu")
+		create_menu({menu_options}, "blt_options")
 	end)
 
 	--Populate options menus
@@ -964,7 +887,7 @@ if not _G.WolfHUD then
 		-- Called on setting change
 		local function change_setting(setting, value)
 			if WolfHUD:getSetting(setting, nil) ~= value and WolfHUD:setSetting(setting, value) then
-				WolfHUD:print_log(string.format("Change setting: %s = %s", table.concat(setting, "->"), tostring(value)), "info")	-- Change type back!
+				WolfHUD:print_log(string.format("Change setting: %s = %s", WolfHUD:SafeTableConcat(setting, "->"), tostring(value)), "info")	-- Change type back!
 				WolfHUD.settings_changed = true
 
 				local script = table.remove(setting, 1)
@@ -984,7 +907,7 @@ if not _G.WolfHUD then
 					if type(req) == "table" then
 						local a = WolfHUD:getSetting(req.setting, nil)
 						if req.equal then
-							if a ~= b then
+							if a ~= req.equal then
 								return false
 							end
 						elseif type(a) == "boolean" then
@@ -1241,7 +1164,7 @@ if not _G.WolfHUD then
 			end
 		end
 
-		populate_menu({menu_options}, "lua_mod_options_menu")
+		populate_menu({menu_options}, "blt_options")
 	end)
 
 	-- Create callbacks and finalize menus
@@ -1344,20 +1267,19 @@ if not _G.WolfHUD then
 			end
 		end
 
-		finalize_menu({menu_options}, "lua_mod_options_menu")
+		finalize_menu({menu_options}, "blt_options") -- BLT.Mods.Constants:LuaModOptionsMenuID() -- Linking to wrong menu ID
 	end)
 
 	--Add localiszation strings
 	Hooks:Add("LocalizationManagerPostInit", "LocalizationManagerPostInit_WolfHUD", function(loc)
-		local loc_path = WolfHUD.mod_path .. "loc/"
+        local loc_path = WolfHUD.mod_path .. "loc/"
 		if file.DirectoryExists( loc_path ) then
 			local custom_lang
 			if _G.PD2KR then
 				custom_lang = "korean"
 			else
-				for k, v in pairs(LuaModManager.Mods) do
-					local info = v.definition
-					if info["name"] == "ChnMod" then
+				for _, mod in pairs(BLT.Mods:Mods()) do
+					if mod:GetName() == "ChnMod" then
 						custom_lang = "chinese"
 						break
 					end
@@ -1383,6 +1305,18 @@ if not _G.WolfHUD then
 			WolfHUD:print_log("Localization folder seems to be missing!", "error")
 		end
 
+		-- Fix community market links for Real Weapon Names
+		Hooks:PostHook(EconomyTweakData, "create_weapon_skin_market_search_url" ,"WolfHUD_EconomyTweakDataPostCreateWeaponSkinMarketSearchUrl", function(self, weapon_id, cosmetic_id)
+			local cosmetic_name = tweak_data.blackmarket.weapon_skins[cosmetic_id] and managers.localization:text(tweak_data.blackmarket.weapon_skins[cosmetic_id].name_id)
+			local weapon_name = managers.localization.orig.text(managers.localization, tweak_data.weapon[weapon_id].name_id) -- bypass custom localizations
+			if cosmetic_name and weapon_name then
+				cosmetic_name = string.gsub(cosmetic_name, " ", "+")
+				weapon_name = string.gsub(weapon_name, " ", "+")
+				return string.gsub("http://steamcommunity.com/market/search?appid=218620&q=" .. cosmetic_name .. "+" .. weapon_name, "++", "+")
+			end
+			return nil
+		end)
+
 		local localized_strings = {}
 		localized_strings["cash_sign"] = WolfHUD:getTweakEntry("CASH_SIGN", "string", "$")
 
@@ -1402,10 +1336,6 @@ if not _G.WolfHUD then
 end
 
 if MenuNodeMainGui then
-	Hooks:PostHook( MenuNodeMainGui , "_setup_item_rows" , "MenuNodeMainGuiPostAddVersionString_WolfHUD" , function( self, node )
-		WolfHUD:checkOverrides()
-	end)
-
 	Hooks:PostHook( MenuNodeMainGui , "_add_version_string" , "MenuNodeMainGuiPostAddVersionString_WolfHUD" , function( self )
 		if alive(self._version_string) then
 			self._version_string:set_text("Payday 2 v" .. Application:version() .. " | WolfHUD v" .. WolfHUD:getVersion())
